@@ -168,6 +168,7 @@ function turnSixDegs() {
 		angle += 6/180*Math.PI;
 		setTimeout(turnSixDegs, 1000);
 	}
+	
 }
 
 function indicatorBuilder() {
@@ -238,14 +239,14 @@ function animate() {
 		if(mode2)
 			initForMode2();
 		if(turn){
-			if(angle>2*Math.PI)
-				angle%=2*Math.PI;
 			angle += 2*Math.PI*dt/60;
 			//var sectorGeometry = new THREE.CircleGeometry( 10, 256 , Math.PI/2, angle);
 		}
 		mode2 = false;
 		mode0and1 = true;
 	}
+	if(angle>2*Math.PI)
+		angle%=2*Math.PI;
 	secondHand.position.set (3.5*Math.sin(angle), 3.5*Math.cos(angle), 0.02);
 	secondHand.rotation.z = -angle;
 	tip.position.set (7*Math.sin(angle), 7*Math.cos(angle), 0.03);
