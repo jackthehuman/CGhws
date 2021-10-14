@@ -46,17 +46,16 @@ function init () {
 	
 	window.addEventListener('resize', onWindowResize, false);
 	///////////////////////////////////////////////////////////////
-    /*
+	/*
 	var cubeGeometry = new THREE.BoxGeometry (3,1,2);
 	var cubeMaterial = new THREE.MeshNormalMaterial();
-    cube = new THREE.Mesh (cubeGeometry, cubeMaterial);
-    scene.add (cube);
+	cube = new THREE.Mesh (cubeGeometry, cubeMaterial);
+	scene.add (cube);
     */
-   
-    var cylinderGeometry = new THREE.CylinderGeometry (1, 1, 1, 32);
+	var cylinderGeometry = new THREE.CylinderGeometry (1, 1, 1, 32);
 	var cylinderMaterial = new THREE.MeshNormalMaterial();
-    cylinder = new THREE.Mesh (cylinderGeometry, cylinderMaterial);
-    scene.add (cylinder);
+	cylinder = new THREE.Mesh (cylinderGeometry, cylinderMaterial);
+	scene.add (cylinder);
     
     //cube.position.set(6, 0, 0);
     //console.log(cube.position);

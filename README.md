@@ -5,7 +5,8 @@
 ### ✅：已完成  |❌：尚未完成
 [這裡]: <https://jackthehuman.github.io/CGhws/index.html>
 [u10706240@ms.ttu.edu.tw]: <mailto:u10706240@ms.ttu.edu.tw>
-### - ✅ [github.com, README.md]
+### - ✅ [hw0 : github.com, README.md]
+### - ✅ [hw1 : time-based animation]
 ### - ❌pending
-### - ❌pending
-[github.com, README.md]: <https://jackthehuman.github.io/CGhws/hw0.html>
+[hw0 : github.com, README.md]: <https://jackthehuman.github.io/CGhws/hw0.html>
+[hw1 : time-based animation]: <https://jackthehuman.github.io/CGhws/hw1.html>
