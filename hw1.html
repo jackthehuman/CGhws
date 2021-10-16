@@ -19,10 +19,15 @@
 
 <body>
 <div id='info'> Homework 1 <br> time-based animation <br>
-<button id="toggle" style="width:20%">Toggle Turn</button>
+<button id="toggle" style="width:20%">start/long press for 3 seconds to reset</button>
+<button id="addTenSec" style="width:20%">+10 seconds(works only when the hand is not ticking)</button>
 <button id="displayStyle" style="width:20%">Analog</button>
-<button id="restart" style="width:20%">Restart</button>
 </div>
+
+<audio id="alarmsound" style="display:none">
+<source src="sounds/alarm_clock_sound.mp3" type='audio/mp3'>
+</audio>
+
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 
@@ -43,6 +48,8 @@ var indicator = [];
 var clockFace, secondHand, tip, center, sector;
 var bringBack = true;
 var mode0and1 = 0, mode2 = 1;
+var reset = false;
+var ringCheck = false;
 // make angle & turn 'static'
 
 init();
@@ -53,9 +60,9 @@ $("#toggle").click(function() {
   quartzCall = true;
   // change button name
   if (turn)  // ... is turning 
-    $("#toggle").text ('stop');
+    $("#toggle").text ('pause');
   else
-	$("#toggle").text ('turn');
+	$("#toggle").text ('start');
 });
 
 $("#displayStyle").click(function() {
@@ -63,14 +70,38 @@ $("#displayStyle").click(function() {
   dspMode++;
   dspMode %= 3;
   if (dspMode == 0)  // ... is turning 
-    $("#displayStyle").text ('Analog');
+    $("#displayStyle").text ('Quartz');
   else if(dspMode == 1)
-	$("#displayStyle").text ('Quartz');
+	$("#displayStyle").text ('Sector');
   else
-  	$("#displayStyle").text ('Sector');
+  	$("#displayStyle").text ('Analog');
   //console.log(dspMode);
 });
 
+$("#addTenSec").click(function() {
+  //angle -= 60/180*Math.PI;
+  if($("#toggle").text () != 'pause' ){
+	angle -= 2*Math.PI/6;
+  }
+});
+
+var timer = 0,
+    timerInterval,
+    button = document.getElementById("toggle");
+
+button.addEventListener("mousedown", function() {
+  timerInterval = setInterval(function(){
+    timer += 1;
+    //document.getElementById("timer").innerText = timer;
+  }, 1000);
+});
+
+button.addEventListener("mouseup", function() {
+  clearInterval(timerInterval);
+  timer = 0;
+});
+
+/*
 $("#restart").click(function() {
   angle = 0;
   turn = false;
@@ -82,12 +113,13 @@ $("#restart").click(function() {
 	sector.rotation.x = -Math.PI/2;
 	scene.add( sector );
 });
-
+*/
 
 function init () {
 	
 	renderer = new THREE.WebGLRenderer();
 	document.body.appendChild (renderer.domElement);
+	
 	var width = window.innerWidth;
 	var height = window.innerHeight;
 	renderer.setSize (width, height);
@@ -124,6 +156,7 @@ function init () {
 	var triangleMaterial = new THREE.MeshBasicMaterial({color: 0x00000});
 	tip = new THREE.Mesh (triangleGeometry, triangleMaterial);
 	scene.add (tip);
+	var group = new THREE.Group();
 
 	var frameGeometry = new THREE.TorusGeometry( 10, 0.5, 10, 100 );
 	var frameMaterial = new THREE.MeshBasicMaterial( { color: 0x000000 } );
@@ -180,7 +213,7 @@ function indicatorBuilder() {
 		indicator[i].position.set(9*Math.sin(ang), 9*Math.cos(ang), 0.01);
 		indicator[i].rotation.z = -ang;
 		scene.add (indicator[i]);
-		ang += 30/180*Math.PI;
+		ang += 1/6*Math.PI;
 	}
 }
 
@@ -193,7 +226,7 @@ function initForMode2() {
 		scene.remove (indicator[i]);
 	}
 	
-	scene.add(sector);
+	//scene.add(sector);
 }
 
 function initForMode0and1(){
@@ -208,9 +241,12 @@ function initForMode0and1(){
 	}
 }
 
+var deviant = 0.000000001;
+
 function animate() {
 	
 	var dt = clock.getDelta();
+	ringCheck = false;
 	//console.log(dt.toFixed(3));
 	scene.remove(sector);
 	if (dspMode == 0){
@@ -220,17 +256,22 @@ function animate() {
 		*/
 		if(mode0and1 == true)
 			initForMode0and1();
-		if(turn)
+		if(turn && angle != 0){
 			angle += 2*Math.PI*dt/60;
+			ringCheck = true;
+		}
 		quartzCall = true;
 		mode2 = true;
 		mode0and1 = false;
+		
 	}
 	else if (dspMode == 1 && quartzCall){
 		if(mode0and1)
 			initForMode0and1();
-		if(turn)
+		if(turn && angle != 0){
 			setTimeout(turnSixDegs, 1000);
+			ringCheck = true;
+		}
 		quartzCall = false;
 		mode2 = true;
 		mode0and1 = false;
@@ -238,15 +279,18 @@ function animate() {
 	else if (dspMode == 2){
 		if(mode2)
 			initForMode2();
-		if(turn){
+		if(turn && angle != 0){
 			angle += 2*Math.PI*dt/60;
+			ringCheck = true;
 			//var sectorGeometry = new THREE.CircleGeometry( 10, 256 , Math.PI/2, angle);
 		}
 		mode2 = false;
 		mode0and1 = true;
 	}
-	if(angle>2*Math.PI)
-		angle%=2*Math.PI;
+	//if(angle>2*Math.PI)
+	angle%=2*Math.PI;
+	if(angle >= 0 || angle < -2*Math.PI+deviant)
+		angle = 0;
 	secondHand.position.set (3.5*Math.sin(angle), 3.5*Math.cos(angle), 0.02);
 	secondHand.rotation.z = -angle;
 	tip.position.set (7*Math.sin(angle), 7*Math.cos(angle), 0.03);
@@ -257,9 +301,45 @@ function animate() {
     sector.rotation.x = -Math.PI/2;
     scene.add( sector );
 	//console.log(angle.toFixed(3));
+	//console.log(angle);
+	//console.log(2*Math.PI);
+	//console.log(timer);
+	resetCheck();
 	requestAnimationFrame(animate);
 	render();
+	//console.log($("#toggle").text());
 	
+}
+
+function play( audio_path, time_in_milisec){
+	let beep = new Audio( audio_path);
+	beep.loop = true;
+	beep.play();
+	setTimeout(() => { beep.pause(); }, time_in_milisec);
+}
+
+function resetCheck() {
+	var alarmSound;
+	alarmSound = document.getElementById ('alarmsound');
+	console.log(ringCheck);
+	if(angle == 0){
+		$("#toggle").text ('start/long press for 3 seconds to reset');
+		if(ringCheck){
+			alarmSound.play();
+			ringCheck = false;
+		}
+		turn = false;
+	}
+	if(alarmSound.currentTime>10){
+		alarmSound.pause();
+		alarmSound.currentTime = 0;
+	}
+	if(timer == 3 && $("#toggle").text() == 'start/long press for 3 seconds to reset'){
+		timer = 0;
+		angle = 0;
+		ringCheck = false;
+	}
+	//console.log(alarmSound.currentTime);
 }
 
 function render() {
