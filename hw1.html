@@ -50,6 +50,7 @@ var bringBack = true;
 var mode0and1 = 0, mode2 = 1;
 var reset = false;
 var ringCheck = false;
+var ringCheckMode2 = false;
 // make angle & turn 'static'
 
 init();
@@ -271,6 +272,7 @@ function animate() {
 		if(turn && angle != 0){
 			setTimeout(turnSixDegs, 1000);
 			ringCheck = true;
+			ringCheckMode2 = true;
 		}
 		quartzCall = false;
 		mode2 = true;
@@ -311,22 +313,16 @@ function animate() {
 	
 }
 
-function play( audio_path, time_in_milisec){
-	let beep = new Audio( audio_path);
-	beep.loop = true;
-	beep.play();
-	setTimeout(() => { beep.pause(); }, time_in_milisec);
-}
-
 function resetCheck() {
 	var alarmSound;
 	alarmSound = document.getElementById ('alarmsound');
 	//console.log(ringCheck);
 	if(angle == 0){
 		$("#toggle").text ('start/long press for 3 seconds to reset');
-		if(ringCheck){
+		if(ringCheck || ringCheckMode2){
 			alarmSound.play();
 			ringCheck = false;
+			ringCheckMode2 = false;
 		}
 		turn = false;
 	}
