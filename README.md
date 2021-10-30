@@ -7,6 +7,8 @@
 [u10706240@ms.ttu.edu.tw]: <mailto:u10706240@ms.ttu.edu.tw>
 ### - ✅ [hw0 : github.com, README.md]
 ### - ✅ [hw1 : time-based animation]
+### - ✅ [hw2 : Dynamic Drive, Rectangle-Circle Intersection, Dual Viewports]
 ### - ❌pending
 [hw0 : github.com, README.md]: <https://jackthehuman.github.io/CGhws/hw0.html>
 [hw1 : time-based animation]: <https://jackthehuman.github.io/CGhws/hw1.html>
+[hw2 : Dynamic Drive, Rectangle-Circle Intersection, Dual Viewports]:  <https://jackthehuman.github.io/CGhws/hw2.html>

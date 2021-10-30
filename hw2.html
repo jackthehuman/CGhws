@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	#info {
+	position: absolute;
+	top: 10px; width: 100%;
+
+	padding: 5px;
+	text-align: center;
+	font-size: 20px;
+	color: #ffff00
+	} 
+	
+	body {
+		overflow: hidden
+	}
+</style>
+</head>
+
+<body>
+<div id="info">Homework 2<br>Dynamic Drive, Rectangle-Circle Intersection, Dual Viewports <br>
+如果撞到障礙物/車停止了請按住space bar並嘗試調整車頭到車身不會撞到障礙物的方位
+</div>
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="https://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
+</script>
+
+<script>
+
+class Obstacle {
+	constructor(center, size, height) {
+		this.center = center.clone();
+		this.mesh = new THREE.Mesh(new THREE.CylinderGeometry(size, size, height, 128), new THREE.MeshNormalMaterial());
+		this.mesh.position.copy(center);
+		this.mesh.position.y = height/2;
+		this.size = size;
+		scene.add(this.mesh);
+	}
+}
+
+class Circle{
+	constructor(center, size){
+		this.center = center.clone();
+		this.mesh = new THREE.Mesh (new THREE.CircleGeometry (size,128), new THREE.MeshBasicMaterial());
+		this.mesh.position.copy(center);
+		this.size = size;
+		this.mesh.rotateX(Math.PI/2);
+		scene.add(this.mesh);
+	}
+}
+
+var outCnt = 0;
+var camera, scene, renderer, clock;
+var cameraThirdPerson;
+var keyboard = new KeyboardState();
+var rect, circle;
+
+var car, inner;
+var rect;
+var pos = new THREE.Vector3();
+var vel = new THREE.Vector3();
+var force = new THREE.Vector3();
+var power, angle;
+var obstacles = [];
+var circles = [];
+var radius = [];
+var wheels = [];
+(function() {
+  Math.clamp = function(val,min,max){
+    return Math.min(Math.max(val,min),max);
+}})();
+
+init();
+animate();
+
+function buildVehicle() {
+  var car = new THREE.Object3D();
+  var mat = new THREE.MeshNormalMaterial();
+  var body = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 2, 20), mat);
+  car.add(body);
+  var pointer = new THREE.Mesh(new THREE.BoxGeometry(10, 2, 2), mat);
+  car.add(pointer);
+  pointer.position.x = 5;
+  return car;
+}
+
+function initHUD() {
+
+  sceneHUD = new THREE.Scene();
+  cameraHUD = new THREE.OrthographicCamera(-10.5, 10.5, 10.5, -10.5, -10, 10);
+  cameraHUD.position.z = 5;
+
+  let points = [];
+  points.push(new THREE.Vector3(-10, -10, 0),
+    new THREE.Vector3(10, -10, 0),
+    new THREE.Vector3(10, 10, 0),
+    new THREE.Vector3(-10, 10, 0),
+    new THREE.Vector3(-10, -10, 0));
+  var lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+  var line = new THREE.Line(lineGeometry,
+    new THREE.LineBasicMaterial({
+      color: 0xffffff
+    }));
+  sceneHUD.add(line);
+}
+
+function init() {
+
+	clock = new THREE.Clock();
+	scene = new THREE.Scene();
+	camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+	camera.position.set(0, 300, 0);
+	cameraThirdPerson = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+	cameraThirdPerson.position.set(0, 10, 0);
+	var gridXZ = new THREE.GridHelper(240, 24, 'red', 'white');
+	//scene.add(gridXZ);
+
+	renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	renderer.setClearColor(0x888888);
+
+	let controls = new THREE.OrbitControls(camera, renderer.domElement);
+	
+	controls.enableKeys = false;
+	document.body.appendChild(renderer.domElement);
+	
+	scene.obstacles = [];
+	radius[0] = 30;
+	radius[1] = 15;
+	radius[2] = 20;
+	radius[3] = 20;
+	scene.obstacles.push(new Obstacle(new THREE.Vector3(50, 0, 50), radius[0], 30));
+	scene.obstacles.push(new Obstacle(new THREE.Vector3(-50, 0, 40), radius[1], 60));
+	scene.obstacles.push(new Obstacle(new THREE.Vector3(40, 0, -40), radius[2], 40));
+	scene.obstacles.push(new Obstacle(new THREE.Vector3(-50, 0, -50), radius[3], 50));
+	
+	circles[0] = new THREE.Mesh (new THREE.CircleGeometry (radius[0],128), new THREE.MeshBasicMaterial());
+	circles[0].rotation.x = -Math.PI/2; 
+	circles[0].position.set (50, 8, 50);
+	
+	circles[1] = new THREE.Mesh (new THREE.CircleGeometry (radius[1],128), new THREE.MeshBasicMaterial());
+	circles[1].rotation.x = -Math.PI/2;
+	circles[1].position.set (-50, 8, 40);
+	
+	circles[2] = new THREE.Mesh (new THREE.CircleGeometry (radius[2],128), new THREE.MeshBasicMaterial());
+	circles[2].rotation.x = -Math.PI/2; 
+	circles[2].position.set (40, 8, -40);
+	
+	circles[3] = new THREE.Mesh (new THREE.CircleGeometry (radius[3],128), new THREE.MeshBasicMaterial());
+	circles[3].rotation.x = -Math.PI/2;
+	circles[3].position.set (-50, 8, -50);
+	
+	power = 5.0;
+	angle = 0.0;
+  	
+	//car = buildVehicle();
+	car = new THREE.Group();
+	rect = new THREE.Mesh (new THREE.PlaneGeometry (20,10), new THREE.MeshBasicMaterial({side: THREE.DoubleSide}));
+	body = new THREE.Mesh (new THREE.BoxGeometry (20,7,10), new THREE.MeshPhongMaterial({side: THREE.DoubleSide}));
+	inner = new THREE.Mesh (new THREE.BoxGeometry (10,7,10), new THREE.MeshPhongMaterial({side: THREE.DoubleSide}));
+	for(var i = 0; i < 4; i++){
+		wheels[i] = new THREE.Mesh (new THREE.CylinderGeometry (3,3,3,128), new THREE.MeshPhongMaterial());
+		wheels[i].rotation.x = Math.PI/2;
+		car.add(wheels[i]);
+	}
+	rect.position.y = 8;
+	rect.visible = 0;
+	wheels[0].position.set(5, 0, 3);
+	wheels[1].position.set(-5, 0, 3);
+	wheels[2].position.set(5, 0, -3);
+	wheels[3].position.set(-5, 0, -3);
+	pointer = new THREE.Mesh (new THREE.CylinderGeometry (.5,.5,7), new THREE.MeshNormalMaterial());
+	pointer.position.y = 11;
+	pointer.position.x = 6.5;
+	inner.position.y = 10;
+	inner.position.x = -2;
+	car.add (pointer);
+	car.add(wheels[0]);
+	car.add(rect);
+	pointer.rotation.z = -Math.PI/2;
+	body.position.y = 5;
+	car.add(inner);
+	
+	
+	car.add (body);
+	rect.rotation.x = Math.PI/2;  //***
+	scene.add (car);
+	
+	light = new THREE.PointLight(0x43639c, 2, 10000);
+	light.position.set( 0, 100, 50 );
+	scene.add( light );
+	var floor = new THREE.Mesh(new THREE.PlaneGeometry( 240, 240 ), new THREE.MeshPhongMaterial( {color: 0xa6a9ad, side: THREE.DoubleSide} ));
+	
+	scene.add(floor);
+	floor.rotation.x = Math.PI/2;
+	
+	initHUD();
+	renderer.autoClear = false;
+	/////////////////////////////////////////////////////////////////////
+	
+}
+
+
+
+function update(dt) {
+
+	  keyboard.update();
+	  
+	  if (vel.length() > 0) {
+		angle = 1.5*Math.PI + Math.atan2(vel.x, vel.z); 
+	  }
+	  if (keyboard.pressed("space"))  {
+		    power = 1;              
+			outCnt = 25;
+	  }
+	  if (keyboard.pressed("up")){
+			power *= 1.05;
+	  }			
+	  if (keyboard.pressed("down")){
+			power /= 1.05; 
+	  }
+	  
+	  
+	  power = Math.clamp (power, 0, 40.0); 
+	  var angle_thrust = angle;
+	  if (keyboard.pressed("left"))
+		angle_thrust += 0.3;
+	  if (keyboard.pressed("right"))
+		angle_thrust -= 0.3;
+		
+	  // compute force
+	  var thrust = new THREE.Vector3(1,0,0).multiplyScalar(power).applyAxisAngle (new THREE.Vector3(0,1,0), angle_thrust);
+	  force.copy (thrust);
+	  force.add(vel.clone().multiplyScalar(-2))
+	  // eulers
+	  vel.add(force.clone().multiplyScalar(dt));
+	  pos.add(vel.clone().multiplyScalar(dt));
+	  
+
+}
+
+var close = false;
+var first = true;
+
+function animate() {
+
+	var dt = clock.getDelta();
+	update(dt);
+	
+	// car update
+	car.position.copy(pos);
+	car.position.y = 3;
+	car.rotation.y = angle;
+	
+	light.position.copy(pos);
+	light.position.y = 20;
+	
+	let Rect = makeRect(rect);
+	if(power > 30)
+		outCnt = 0;
+	if(power == 0){
+		light.color = new THREE.Color(0x9c4343);
+	}
+	else
+		light.color = new THREE.Color(0x43639c);
+	
+	for(var i = 0; i < 4; i++){
+		if (Check_Intersect (Rect, circles[i], radius[i])) {
+			outCnt++;	
+			power /= 2;
+			if(outCnt > 40){
+				power = 0;
+				vel.x = 0;
+				vel.z = 0;
+				outCnt = 0;
+			}
+			//light.color = new THREE.Color(0x9c4343);
+		} 
+		else {
+			//circles[i].material.color = new THREE.Color ('white'); 
+			//scene.obstacles[i].mesh.material.color = new THREE.Color ('white');
+			out = true;
+		}
+	}
+	
+	requestAnimationFrame(animate);
+	render();
+}
+
+function makeRect(rect) {
+	let Rect = {};
+    Rect.max = car.localToWorld ( new THREE.Vector3(10, 0, 5) );
+    Rect.min = car.localToWorld ( new THREE.Vector3(-10, 0, -5) );
+    Rect.px = car.localToWorld ( new THREE.Vector3(1,0,0)).sub (car.position);
+    return Rect;
+}	
+
+function render() {
+	
+	 var WW = window.innerWidth;
+  var HH = window.innerHeight;
+
+  renderer.clear();
+
+	renderer.setViewport(0, 0, WW / 2, HH);
+  camera.aspect = WW / 2 / HH;
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  renderer.render(sceneHUD, cameraHUD);
+
+	 renderer.setViewport(WW / 2, 0, WW / 2, HH);
+  let cameraPos = new THREE.Vector3(-40, 25, 0);
+  car.localToWorld (cameraPos);
+  cameraThirdPerson.position.copy (cameraPos);
+  let cameraLookAt = new THREE.Vector3(0, 10, 0);
+  car.localToWorld (cameraLookAt);
+  cameraThirdPerson.lookAt (cameraLookAt);
+  renderer.render(scene, cameraThirdPerson);
+  renderer.render(sceneHUD, cameraHUD);
+	
+}
+
+function Check_Intersect(Rect, C, Rad) {
+	const Rad2 = Rad * Rad;
+  
+  let xHat = Rect.px;
+  let zHat = xHat.clone().cross (new THREE.Vector3(0,1,0)).normalize();
+  
+  let R = {max:{x:0, z:0}, min:{x:0, z:0}};
+
+  let cp = Rect.max.clone().sub (C.position);   
+  R.max.x = cp.dot (xHat), R.max.z = cp.dot (zHat);
+  
+	cp = Rect.min.clone().sub (C.position);
+  R.min.x = cp.dot (xHat), R.min.z = cp.dot (zHat);
+  
+	if (R.max.x < 0) 			// R to left of circle center 
+   	if (R.max.z < 0) 		// R in lower left corner 
+     		return ((R.max.x * R.max.x + R.max.z * R.max.z) < Rad2);
+   	else if (R.min.z > 0) 	// R in upper left corner 
+     		return ((R.max.x * R.max.x + R.min.z * R.min.z) < Rad2);
+   	else 					// R due West of circle 
+     		return(Math.abs(R.max.x) < Rad);
+ 	else if (R.min.x > 0)  	// R to right of circle center 
+   		if (R.max.z < 0) 	// R in lower right corner 
+     			return ((R.min.x * R.min.x + R.max.z * R.max.z) < Rad2);
+   	else if (R.min.z > 0)  	// R in upper right corner 
+     		return ((R.min.x * R.min.x + R.min.z * R.min.z) < Rad2);
+   	else 				// R due East of circle 
+     		return (R.min.x < Rad);
+ 	else				// R on circle vertical centerline 
+   		if (R.max.z < 0) 	// R due South of circle 
+     		return (Math.abs(R.max.z) < Rad);
+   	else if (R.min.z > 0)  	// R due North of circle 
+     		return (R.min.z < Rad);
+   	else 				// R contains circle centerpoint 
+     		return(true);
+} 	
+
+
+</script>
+</body>
+</html>
