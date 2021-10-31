@@ -203,7 +203,7 @@ function init() {
 	
 }
 
-
+var turn = false;
 
 function update(dt) {
 
@@ -222,15 +222,18 @@ function update(dt) {
 	  if (keyboard.pressed("down")){
 			power /= 1.05; 
 	  }
-	  
+	  turn = false;
 	  
 	  power = Math.clamp (power, 0, 40.0); 
 	  var angle_thrust = angle;
-	  if (keyboard.pressed("left"))
+	  if (keyboard.pressed("left")){
 		angle_thrust += 0.3;
-	  if (keyboard.pressed("right"))
+		turn = true;
+	  }
+	  if (keyboard.pressed("right")){
 		angle_thrust -= 0.3;
-		
+		turn = true;
+	  }
 	  // compute force
 	  var thrust = new THREE.Vector3(1,0,0).multiplyScalar(power).applyAxisAngle (new THREE.Vector3(0,1,0), angle_thrust);
 	  force.copy (thrust);
@@ -244,6 +247,7 @@ function update(dt) {
 
 var close = false;
 var first = true;
+var angle1, angle2;
 
 function animate() {
 
@@ -268,9 +272,19 @@ function animate() {
 		light.color = new THREE.Color(0x43639c);
 	
 	for(var i = 0; i < 4; i++){
+		if(turn && outCnt){
+			turn = false;
+		}
 		if (Check_Intersect (Rect, circles[i], radius[i])) {
-			outCnt++;	
+			outCnt++;
 			power /= 2;
+			angle2 = angle;
+			if(turn && outCnt){
+				power = 0;
+				vel.x = 0;
+				vel.z = 0;
+				outCnt = 0;
+			}
 			if(outCnt > 40){
 				power = 0;
 				vel.x = 0;
@@ -285,7 +299,7 @@ function animate() {
 			out = true;
 		}
 	}
-	
+	angle1 = angle;
 	requestAnimationFrame(animate);
 	render();
 }
