@@ -10,9 +10,13 @@
 ### - ✅ [hw2 : Dynamic Drive, Rectangle-Circle Intersection, Dual Viewports]
 ### - ✅ [hw3 : Modeling, Multiple Viewports]
 ### - ✅ [hw4 : Class, Texture Animation, module, and Picking]
-### - ❌pending
+### - ✅ [hw5 ver.1 : Shader, Render-to-texture, module]
+### - ✅ [hw5 ver.2 : Shader, Render-to-texture, module]
+
 [hw0 : github.com, README.md]: <https://jackthehuman.github.io/CGhws/hw0.html>
 [hw1 : time-based animation]: <https://jackthehuman.github.io/CGhws/hw1.html>
 [hw2 : Dynamic Drive, Rectangle-Circle Intersection, Dual Viewports]:  <https://jackthehuman.github.io/CGhws/hw2.html>
 [hw3 : Modeling, Multiple Viewports]:<https://jackthehuman.github.io/CGhws/hw3.html>
 [hw4 : Class, Texture Animation, module, and Picking]:<https://jackthehuman.github.io/CGhws/hw4/hw4main.html>
+[hw5 ver.1 : Shader, Render-to-texture, module]:<https://jackthehuman.github.io/CGhws/hw5/ver1/hw5main.html>
+[hw5 ver.2 : Shader, Render-to-texture, module]:<https://jackthehuman.github.io/CGhws/hw5/ver2/hw5main.html>
